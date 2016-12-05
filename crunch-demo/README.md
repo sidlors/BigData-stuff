@@ -1,5 +1,44 @@
 ## Introducción a Crunch
 
+El proyecto Apache Crunch desarrolla y soporta la APIs Java cuyo objetivo es simplificar el proceso de creación de data pipelines en la parte superior de Apache Hadoop. 
+
+Las API de Crunch son modeladas basandose en el proyecto FlumeJava que es la biblioteca que Google utiliza para construir tuberías de datos en la parte superior de su propia implementación de MapReduce.
+
+Una de las preguntas más comunes que escuchamos es cómo Crunch se compara con otros proyectos que proporcionan abstracciones sobre MapReduce, como Apache Pig, Apache Hive y Cascading, a continuacion un resumen de lo que Crunch nos brinda:
+
+* Enfocado Desarrollador . Apache Hive y Apache Pig fueron construidos para hacer MapReduce accesible a los analistas de datos con experiencia limitada en la programación Java.
+	+ *Crunch* **fue diseñado para desarrolladores** que entienden Java y quieren usar MapReduce de manera efectiva para escribir aplicaciones rápidas y confiables que necesitan cumplir con SLAs ajustados. Crunch se utiliza a menudo junto con *Hive* y  *Pig*; Un pipe Crunch escrita por el equipo de desarrollo "sesioniza" un conjunto de logs de usuario genera son procesados por una colección diversa de Pig scripts y Hive consultas escritas por analistas.
+
+Dependencia Maven 
+
+El proyecto Crunch provee de un artefacto en Maven Central de la siguiente forma:
+
+```xml
+  <dependency>
+    <groupId>org.apache.crunch</groupId>
+    <artifactId>crunch-core</artifactId>
+    <version>${crunch.version}</version>
+  </dependency>
+```
+
+El artefacto crunch contiene las bibliotecas principales para planificar y ejecutar las pipelines de MapReduce. Dependiendo de su caso de uso, también puede encontrar los siguientes artefactos útiles:
+
+1. crunch-test: Clases Helper classes Para pruebas de pipelines Crunch 
+2. crunch-hbase: Utilerias para pipelines que lean/escriban datos a un Apache HBase
+3. crunch-scrunch: Scrunch, es un API Crunch para Scala 
+4. crunch-spark: Ejecuta pipelines Crunch usando Apache Spark
+5. crunch-contrib: Librerias Extra Crunch para procesamiento de texto, Conecciones JDBC y BloomFilters.
+6. crunch-examples: Ejemplos de pipelines MapReduce and HBase 
+7. crunch-archetype: Un archetype Maven  para crear nuevos proyectos Crunch pipeline.
+
+
+* Abstracciones mínimas. Los pipes Crunch proporcionan una capa fina en la parte superior de MapReduce. Los desarrolladores tienen acceso a las API de MapReduce de bajo nivel siempre que las necesiten. Este minimalismo también significa que Crunch es extremadamente rápido, sólo ligeramente más lento que un pipe "manual" desarrollado con las API de MapReduce, y la comunidad está trabajando para hacerlo más rápido todo el tiempo. Dicho esto, uno de los objetivos del proyecto es la portabilidad, y las abstracciones que ofrece Crunch están diseñadas para facilitar la transición de Hadoop 1.0 a Hadoop 2.0 y para proporcionar un soporte transparente para futuros marcos de procesamiento de datos que se ejecutan en Hadoop, incluyendo Apache Spark y Apache Tez.
+
+* Modelo de datos flexible. Hive, Pig y Cascading usan un modelo de datos centrado en la tupla que funciona mejor cuando los datos de entrada se pueden representar usando una colección con nombre de valores escalares, al igual que las filas de una tabla de base de datos. Crunch permite a los desarrolladores una considerable flexibilidad en la forma en que representan sus datos, lo que hace que Crunch sea la mejor plataforma para los desarrolladores que trabajan con estructuras complejas como **Apache Avro** o buffers de protocolo, datos geoespaciales y series temporales y datos almacenados en tablas de Apache HBase.
+
+
+
+
 ### Motivación
 
 Comencemos con una pregunta básica: 
@@ -43,7 +82,7 @@ El Java API de Crunch esta centrado en 3 interfaces que representan los datasets
 
 El Objeto PCollection proporciona un método, **parallelDo**, que aplica un **DoFn** a cada elemento en PCollection de forma paralela y devuelve un nuevo PCollection como su resultado.
 
-La clase PTable <K, V> es una subinterfaz de PCollection <Pair <K, V >> que representa un multimap distribuido, desordenado de su tipo de clave K a su tipo de valor V. Además de la operación parallelDo, PTable proporciona un metodo *GroupByKey* operación que agrega todos los valores en el PTable que tienen la misma clave en un único registro. Es la operación groupByKey que dispara la fase *sort* del MapReduce. 
+La clase PTable < K, V > es una subinterfaz de PCollection < Pair < K, V > > que representa un multimap distribuido, desordenado de su tipo de clave K a su tipo de valor V. Además de la operación parallelDo, PTable proporciona un metodo *GroupByKey* operación que agrega todos los valores en el PTable que tienen la misma clave en un único registro. Es la operación groupByKey que dispara la fase *sort* del MapReduce. 
 
 Los desarrolladores pueden ejercer un control detallado sobre el número de reductores y las estrategias de partición, agrupación y clasificación utilizadas durante el *shuffle* mediante una instanciacion de la clase *GroupingOptions* a la función *groupByKey*
 
@@ -51,7 +90,7 @@ El resultado de una operación groupByKey es un objeto *PGroupedTable <K, V>* un
 
 Además del procesamiento de *parallelDo* a través de DoFns, *PGroupedTable* proporciona una operación *combineValues* que permite a un conmutativo y asociativo *Aggregator* para ser aplicado a los valores de la instancia *PGroupedTable* en el mapa y reducir los lados del shuffle. 
 
-*Se proporcionan varias implementaciones comunes de Aggregator <V> en la clase Aggregators.*
+*Se proporcionan varias implementaciones comunes de Aggregator < V > en la clase Aggregators.*
 
 Finalmente *PCollection, PTable y PGroupedTable* soportan una operación de unión, que toma una serie de PCollections distintas que tienen el mismo tipo de datos y las trata como una única PCollection virtual.
 
@@ -67,7 +106,7 @@ Cada pipeline de datos *Crunch* está coordinado por una instancia de la interfa
 
 ### Proceso de datos con DoFns
 
-DoFns representa la  logica computacional de los pipelines Crunch. Estos estan diseñaos para  escrivir , probar y deployar facilmente con el contexto de un job MapReduce. Mucha de la codificacion usando el API Crunch APIs se escribira en el metodos DoFns por lo que es  tener un buen entedimiento  de como usarlo efectivament sera critico para elaborando pipelines elegantes y eficientes.
+DoFns representa la  logica computacional de los pipelines Crunch. En este metodo de la clase se han diseñado para  escribir , probar y deployar facilmente con el contexto de un job MapReduce. Mucha de la codificacion usando el API Crunch APIs se escribira en el metodos DoFns por lo que es  tener un buen entedimiento de cómo usarlo efectivamente sera crítico para elaborando pipelines elegantes y efectivos.
 
 Si nuestro *DoFn* necesita trabajar con una clase que no implementa Serializable y no se puede modificar (por ejemplo, porque se define en una biblioteca de terceros) se debera utilizar la palabra clave *transient* en esa variable de miembro para que la serialización de la DoFn no falle si ese objeto pasa a ser definido. Se puede crear una instancia del objeto durante el tiempo de ejecución utilizando el método *initialize*.
 
@@ -123,7 +162,7 @@ La otra forma de resolver este problema cuando se usen clases internas es defini
 
 > *El uso de métodos estáticos para definir su lógica de negocio en términos de un clase anonima DoFns  puede hacer que su código sea más fácil de probar utilizando implementaciones PCollection en memoria en sus pruebas unitarias*
 
-### Pasos del procesamiento en tiempo de ejecución
+### Ciclo de vida del pipeline en Runtime
 
 Después de que Crunch carga en runtime los DoFns serializados dentro de sus  tareas mapa y reducers, los DoFns se ejecutan sobre los datos de entrada a través de la siguiente secuencia:
 
@@ -148,37 +187,36 @@ DoFns da acceso directo al objeto *TaskInputPutoputContext* para usarlo con una 
 
 DoFns también tiene un número de métodos auxiliares para trabajar con los Hadoop Counters, todos llamados 'increment'. 
 
-Los contadores son una forma increíblemente útil de mantener un registro del estado de las tuberías de datos de larga duración y detectar cualquier condición excepcional que se produzca durante el procesamiento, y están soportados tanto en los contextos de *MapReduce-based* y *in-memory Crunch pipeline*. 
+Los contadores son una forma increíblemente útil de mantener un registro del estado de los pipelines de datos de larga duración y detectar cualquier condición excepcional que se produzca durante el procesamiento, y están soportados tanto en los contextos de *MapReduce-based* y *in-memory Crunch pipeline*. 
 
 Podemos recuperar el valor de los Counters en el código de cliente al final de un pipeline MapReduce por medio de los objetos *StageResult* devueltos por Crunch al final de una ejecución.
 
-
-* increment(String groupName, String counterName) incrementa el valor del contador dado en 1.
-* increment(String groupName, String counterName, long value) incrementa el valor del contador dado por el asignado en *value*.
-* increment(Enum<?> counterName) incrementa el valor del contador dado by 1.
-* increment(Enum<?> counterName, long value) incrementa el valor del contador dado por el asignado en *value*.
+* *increment(String groupName, String counterName)* incrementa el valor del contador dado en 1.
+* *increment(String groupName, String counterName, long value)* incrementa el valor del contador dado por el asignado en *value*.
+* *increment(Enum<?> counterName)* incrementa el valor del contador dado by 1.
+* *increment(Enum<?> counterName, long value)* incrementa el valor del contador dado por el asignado en *value*.
 
 ### Patrones Comunes DoFn
 
 Las API de Crunch contienen una serie de subclases útiles de DoFn que manejan escenarios de procesamiento de datos comunes y son más fáciles de escribir y probar. 
 
-El paquete *org.apache.crunch* contiene tres de las especializaciones más importantes Cada una de estas implementaciones DoFn tiene métodos asociados en las interfaces PCollection, PTable y PGroupedTable para soportar pasos comunes de procesamiento de datos.
+El paquete *org.apache.crunch* contiene tres de las especializaciones más importantes. Cada una de estas implementaciones DoFn tiene métodos asociados en las interfaces PCollection, PTable y PGroupedTable para soportar pasos comunes de procesamiento de datos.
 
-La extensión más simple es la clase FilterFn, que define un único método abstracto boolean accept(T input). 
+La extensión más simple es la clase *FilterFn* que define un único método abstracto *boolean accept(T input)*. 
 
-El filtroFn se puede aplicar a un PCollection <T> llamando al metodo filter(FilterFn<T> fn) devolverá un nuevo PCollection <T> que sólo contiene los elementos de la PCollection de entrada para que el método accept devuelto true. 
+El filtroFn se puede aplicar a un PCollection < T > llamando al metodo filter(FilterFn< T > fn) devolverá un nuevo PCollection < T > que sólo contiene los elementos de la PCollection de entrada para que el método accept devuelto true. 
 
 Tenga en cuenta que la función de filtro no incluye un argumento PType en su firma, porque no hay ningún cambio en el tipo de datos de la PCollection cuando se aplica FilterFn. 
 
 Es posible componer nuevas instancias FilterFn combinando varios FilterFns juntos utilizando los métodos and, or, y no factory definidos en la clase auxiliar FilterFns.
 
-La segunda extensión es la clase MapFn, que define un único método abstracto  T map(S input). Para tareas de transformación simples en las que cada registro de entrada tendrá exactamente una salida, es fácil probar un MapFn verificando que una entrada dada devuelve una salida dada.
+La segunda extensión es la clase MapFn, que define un único método abstracto T map(S input). Para tareas de transformación simples en las que cada registro de entrada tendrá exactamente una salida, es fácil probar un MapFn verificando que una entrada dada devuelve una salida dada.
 
-MapFns también es utilizan en métodos especializados en las interfaces PCollection y PTable. PCollection <V> define el método *PTable<K,V> by(MapFn<V, K> mapFn, PType<K> keyType)* que se puede utilizar para crear un PTable desde un PCollection escribiendo una función que extrae la clave Tipo K) del valor (de tipo V) contenido en el PCollection. 
+MapFns también es utilizan en métodos especializados en las interfaces PCollection y PTable. PCollection < V > define el método *PTable< K,V > by(MapFn < V, K > mapFn, PType< K > keyType)* que se puede utilizar para crear un PTable desde un PCollection escribiendo una función que extrae la clave Tipo K) del valor (de tipo V) contenido en el PCollection. 
 
-La función by sólo requiere que se da el PType de la clave y construye un PTableType <K, V> del tipo de clave dado y el tipo de valor existente de PCollection.
+La función by sólo requiere que se da el PType de la clave y construye un PTableType < K, V > del tipo de clave dado y el tipo de valor existente de PCollection.
 
-PTable <K, V>, a su vez, tiene métodos *PTable<K1, V> mapKeys(MapFn<K, K1> mapFn)* y *PTable<K, V2> mapValues(MapFn<V, V2>)*  que manejan el caso común de convertir en uno sólo uno de los valores pareja en una instancia PTable de un tipo a otro, dejando el otro tipo igual.
+PTable <K, V>, a su vez, tiene métodos *PTable< K1, V > mapKeys( MapFn< K, K1 > mapFn)* y *PTable<K, V2> mapValues(MapFn< V, V2 >)*  que manejan el caso común de convertir en uno sólo uno de los valores pareja en una instancia PTable de un tipo a otro, dejando el otro tipo igual.
 
 La extensión final de nivel superior de DoFn es la clase *CombineFn*, que se utiliza junto con el método *combineValues* definido en la interfaz PGroupedTable.
 
@@ -192,7 +230,7 @@ Hay una serie de implementaciones de la interfaz Aggregator definidas via static
 
 ### Serializacion de Datos con PTypes
 
-Cada PCollection <T> tiene un PType<T> asociado  que encapsula la información sobre cómo serializar y deserializar el contenido de ese PCollection.
+Cada PCollection < T > tiene un PType< T > asociado  que encapsula la información sobre cómo serializar y deserializar el contenido de ese PCollection.
 
 Los PType<T> son necesarios debido al aseguramiento de tipos; En el tiempo de ejecución, cuando el planificador de Crunch está mapeando de PCollections a una serie de trabajos de MapReduce, el tipo de un PCollection (es decir, el T en PCollection <T>) ya no está disponible para nosotros y debe ser proporcionado por la instancia asociada PType. 
 
@@ -346,7 +384,7 @@ La *reflection*  de Avro es una gran manera de definir tipos intermedios para su
 
 ### Leer y escribir datos
 
-Las principales herramientas para trabajar con datos de pipelines en Hadoop incluyen algún tipo asbtracto para trabajar con las clases InputFormat <K, V> y OutputFormat <K, V> definidas en MapReduce APIs. Por ejemplo, Hive incluye *SerDes* y Pig requiere *LoadFuncs* y *StoreFuncs*. Tomemos un momento para explicar qué funcionalidad proporcionan estas abstracciones para los desarrolladores.
+Las principales herramientas para trabajar con datos de pipelines en Hadoop incluyen algún tipo asbtracto para trabajar con las clases InputFormat <K, V> y OutputFormat < K, V > definidas en MapReduce APIs. Por ejemplo, Hive incluye *SerDes* y Pig requiere *LoadFuncs* y *StoreFuncs*. Tomemos un momento para explicar qué funcionalidad proporcionan estas abstracciones para los desarrolladores.
 
 La mayoría de los desarrolladores comienzan a usar una de las herramientas de la pipelines para Hadoop porque tienen un problema que requiere unir datos de varios archivos de entrada juntos. Aunque Hadoop proporciona soporte para la lectura de varias instancias de InputFormat en diferentes rutas a través de la clase *MultipleInputs*, MultipleInputs no resuelve algunos de los problemas comunes que los desarrolladores encuentran al leer múltiples entradas.
 
